@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#16213e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Библиотека">
+<title>Библиотека</title>
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%22%2C%22short_name%22%3A%22%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2316213e%22%2C%22theme_color%22%3A%22%2316213e%22%7D">
+<style>
+  @font-face {
+    font-family: 'NotoEmoji';
+    src: url('https://fonts.gstatic.com/s/notoemoji/v47/bMrnmSyK7YY-MEze0GeneqZTm-p5KDFi2lYk1gu0WT0.woff2') format('woff2');
+    unicode-range: U+1F000-1FFFF, U+2600-27FF, U+2300-23FF, U+2B00-2BFF, U+FE00-FE0F;
+  }
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0eeea;
+    --ink: #1a1a2e;
+    --ink2: #6b6b80;
+    --ink3: #aaaab8;
+    --accent: #16213e;
+    --gold: #e8b86d;
+    --red: #c0392b;
+    --border: rgba(0,0,0,0.08);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, 'Helvetica Neue', Arial, 'NotoEmoji', sans-serif;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+
+  /* ── SCREENS ── */
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
+  .screen.hidden { transform: translateX(100%); pointer-events: none; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--accent);
+    color: white;
+    padding: calc(var(--safe-top) + 14px) 16px 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-back {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    border: none; color: white; cursor: pointer; flex-shrink: 0;
+    font-size: 18px;
+  }
+
+  .header-info { flex: 1; min-width: 0; }
+  .header-title { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+  .header-action {
+    background: rgba(255,255,255,0.12);
+    border: none; color: white; cursor: pointer;
+    padding: 7px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* ── LIBRARY SCREEN ── */
+  #screen-library { background: var(--bg); }
+
+  .lib-topbar {
+    background: var(--accent);
+    padding: calc(var(--safe-top) + 16px) 16px 16px;
+    flex-shrink: 0;
+  }
+
+  .lib-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .lib-title { font-size: 26px; font-weight: 700; color: white; letter-spacing: -0.02em; }
+  .lib-count { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  .add-btn {
+    width: 38px; height: 38px;
+    background: var(--gold);
+    border: none; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 22px; color: var(--accent); font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    font-size: 14px; opacity: 0.4; pointer-events: none;
+  }
+
+  #search {
+    width: 100%; padding: 9px 12px 9px 34px;
+    background: rgba(255,255,255,0.12);
+    border: none; border-radius: 10px;
+    color: white; font-size: 14px;
+    outline: none;
+  }
+
+  #search::placeholder { color: rgba(255,255,255,0.35); }
+
+  .book-list {
+    flex: 1; overflow-y: auto;
+    padding: 12px 16px;
+    padding-bottom: calc(var(--safe-bottom) + 80px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── BOOK CARD ── */
+  .book-card {
+    background: var(--surface);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .book-card:active { transform: scale(0.98); }
+
+  .book-cover {
+    width: 44px; height: 56px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+
+  .book-info { flex: 1; min-width: 0; }
+  .book-name { font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+  .book-date { font-size: 12px; color: var(--ink3); }
+  .book-size { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+
+  .book-arrow { font-size: 18px; color: var(--ink3); flex-shrink: 0; }
+
+  /* Swipe delete */
+  .book-card .delete-hint {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    background: var(--red);
+    display: flex; align-items: center; padding: 0 20px;
+    color: white; font-size: 13px; font-weight: 600;
+    border-radius: 0 14px 14px 0;
+    transform: translateX(100%);
+    transition: transform 0.25s;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 32px; text-align: center;
+  }
+
+  .empty-emoji { font-size: 56px; margin-bottom: 16px; }
+  .empty-title { font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  .empty-sub { font-size: 14px; color: var(--ink2); line-height: 1.5; margin-bottom: 24px; }
+
+  .empty-btn {
+    background: var(--accent); color: white;
+    border: none; border-radius: 12px;
+    padding: 13px 28px; font-size: 15px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── FAB ── */
+  .fab {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 24px);
+    right: 20px;
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border: none; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(22,33,62,0.35);
+    font-size: 26px; color: var(--gold);
+    transition: transform 0.1s;
+    z-index: 100;
+  }
+
+  .fab:active { transform: scale(0.94); }
+
+  /* ── UPLOAD SHEET ── */
+  .sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+  .sheet {
+    width: 100%;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(var(--safe-bottom) + 20px);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  }
+
+  .sheet-overlay.open .sheet { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .sheet-sub { font-size: 13px; color: var(--ink2); margin-bottom: 20px; }
+
+  .drop-area {
+    border: 2px dashed rgba(22,33,62,0.2);
+    border-radius: 14px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 14px;
+  }
+
+  .drop-area.drag { border-color: var(--accent); background: rgba(22,33,62,0.04); }
+  .drop-area-icon { font-size: 32px; margin-bottom: 10px; }
+  .drop-area-text { font-size: 14px; color: var(--ink2); line-height: 1.5; }
+  .drop-area-text strong { color: var(--ink); }
+
+  .sheet-pick-btn {
+    width: 100%;
+    background: var(--accent); color: white;
+    border: none; border-radius: 12px;
+    padding: 14px; font-size: 15px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  #file-input { display: none; }
+
+  /* ── READER SCREEN ── */
+  #screen-reader { background: white; z-index: 10; }
+
+  #reader-frame {
+    flex: 1; border: none; width: 100%; display: block;
+    background: white;
+  }
+
+  .reader-actions {
+    display: flex; gap: 8px;
+  }
+
+  .reader-btn {
+    background: rgba(255,255,255,0.12);
+    border: none; color: white; cursor: pointer;
+    padding: 7px 12px; border-radius: 10px;
+    font-size: 13px; white-space: nowrap;
+  }
+
+  /* ── CONTEXT MENU ── */
+  .ctx-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.3);
+    display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .ctx-overlay.open { opacity: 1; pointer-events: all; }
+
+  .ctx-menu {
+    width: 100%;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px calc(var(--safe-bottom) + 16px);
+    transform: translateY(100%);
+    transition: transform 0.25s;
+  }
+
+  .ctx-overlay.open .ctx-menu { transform: translateY(0); }
+  .ctx-book-name { font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 14px; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .ctx-btn {
+    width: 100%; background: var(--surface2);
+    border: none; border-radius: 12px;
+    padding: 14px 16px; font-size: 15px;
+    text-align: left; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px; color: var(--ink);
+  }
+
+  .ctx-btn.danger { color: var(--red); }
+  .ctx-btn-icon { font-size: 18px; width: 24px; text-align: center; }
+  .ctx-cancel {
+    width: 100%; background: var(--surface);
+    border: none; border-radius: 12px;
+    padding: 14px; font-size: 15px; font-weight: 600;
+    cursor: pointer; color: var(--ink2);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- LIBRARY SCREEN -->
+<div class="screen" id="screen-library">
+  <div class="lib-topbar">
+    <div class="lib-title-row">
+      <div>
+        <div class="lib-title">📚 Библиотека</div>
+        <div class="lib-count" id="lib-count">Загрузи свои HTML-файлы</div>
+      </div>
+      <button class="add-btn" onclick="openSheet()">+</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="search" type="search" placeholder="Поиск по названию..." oninput="filterBooks(this.value)" autocomplete="off" />
+    </div>
+  </div>
+
+  <div id="book-list-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="book-list" id="book-list"></div>
+    <div class="empty" id="empty-state" style="display:none">
+      <div class="empty-emoji">📄</div>
+      <div class="empty-title">Библиотека пуста</div>
+      <div class="empty-sub">Добавь HTML-файлы — они сохранятся прямо в приложении, без интернета</div>
+      <button class="empty-btn" onclick="openSheet()">Добавить файл</button>
+    </div>
+  </div>
+
+  <button class="fab" onclick="openSheet()">+</button>
+</div>
+
+<!-- READER SCREEN -->
+<div class="screen hidden" id="screen-reader">
+  <div class="header">
+    <button class="header-back" onclick="closeReader()">‹</button>
+    <div class="header-info">
+      <div class="header-title" id="reader-title">Документ</div>
+      <div class="header-sub" id="reader-sub"></div>
+    </div>
+    <div class="reader-actions">
+      <button class="reader-btn" onclick="downloadCurrent()">↓</button>
+    </div>
+  </div>
+  <iframe id="reader-frame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+</div>
+
+<!-- UPLOAD SHEET -->
+<div class="sheet-overlay" id="sheet" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Добавить файлы</div>
+    <div class="sheet-sub">HTML-файлы сохраняются локально на устройстве</div>
+    <div class="drop-area" id="drop-area" onclick="document.getElementById('file-input').click()">
+      <div class="drop-area-icon" style="font-family:'NotoEmoji',sans-serif">📂</div>
+      <div class="drop-area-text"><strong>Нажми чтобы выбрать</strong><br>или перетащи HTML-файлы сюда</div>
+    </div>
+    <button class="sheet-pick-btn" onclick="document.getElementById('file-input').click()">Выбрать файлы</button>
+    <input type="file" id="file-input" accept=".html,.htm" multiple />
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-overlay" id="ctx" onclick="closeCtx(event)">
+  <div class="ctx-menu">
+    <div class="ctx-book-name" id="ctx-name"></div>
+    <button class="ctx-btn" onclick="ctxOpen()"><span class="ctx-btn-icon">&#128214;</span> Открыть</button>
+    <button class="ctx-btn" onclick="ctxDownload()"><span class="ctx-btn-icon">&#8595;</span> Скачать файл</button>
+    <button class="ctx-btn danger" onclick="ctxDelete()"><span class="ctx-btn-icon">&#128465;</span> Удалить</button>
+    <button class="ctx-cancel" onclick="closeCtx()">Отмена</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'html-library-v2';
+let books = [];
+let searchQ = '';
+let ctxId = null;
+let activeId = null;
+
+const COLORS = ['#FFF3CD','#D4EDDA','#D1ECF1','#F8D7DA','#E8D5F5','#FFEAA7','#DFE6E9','#FADBD8'];
+function colorFor(id) {
+  let h = 0;
+  for(let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % COLORS.length;
+  return COLORS[h];
+}
+
+function initials(name) {
+  return name.replace(/\.html?$/i,'').slice(0,2).toUpperCase();
+}
+
+function plural(n, a, b, c) {
+  const m = n % 10, m2 = n % 100;
+  if(m === 1 && m2 !== 11) return a;
+  if(m >= 2 && m <= 4 && (m2 < 10 || m2 >= 20)) return b;
+  return c;
+}
+
+function formatSize(str) {
+  const bytes = new Blob([str]).size;
+  if(bytes < 1024) return bytes + ' Б';
+  if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' КБ';
+  return (bytes / 1024 / 1024).toFixed(1) + ' МБ';
+}
+
+function today() {
+  return new Date().toLocaleDateString('ru-RU', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+function load() {
+  try { books = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { books = []; }
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(books)); }
+  catch { alert('Хранилище заполнено! Удали старые файлы.'); }
+}
+
+function renderList() {
+  const list = document.getElementById('book-list');
+  const empty = document.getElementById('empty-state');
+  const count = document.getElementById('lib-count');
+  const filtered = books.filter(b => b.name.toLowerCase().includes(searchQ.toLowerCase()));
+
+  if(books.length === 0) {
+    count.textContent = 'Загрузи свои HTML-файлы';
+    list.innerHTML = '';
+    list.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+
+  count.textContent = books.length + ' ' + plural(books.length, 'документ', 'документа', 'документов');
+  empty.style.display = 'none';
+  list.style.display = 'block';
+  list.innerHTML = '';
+
+  if(filtered.length === 0) {
+    const p = document.createElement('div');
+    p.style.cssText = 'text-align:center;padding:40px 20px;color:#aaa;font-size:14px';
+    p.textContent = 'Ничего не найдено';
+    list.appendChild(p);
+    return;
+  }
+
+  filtered.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.innerHTML = `
+      <div class="book-cover" style="background:${colorFor(b.id)}">${initials(b.name)}</div>
+      <div class="book-info">
+        <div class="book-name">${b.name.replace(/\.html?$/i,'')}</div>
+        <div class="book-date">${b.date}</div>
+        <div class="book-size">${formatSize(b.content)}</div>
+      </div>
+      <div class="book-arrow">›</div>
+    `;
+    card.addEventListener('click', () => openReader(b.id));
+    card.addEventListener('contextmenu', e => { e.preventDefault(); openCtx(b.id); });
+
+    // Long press
+    let pressTimer;
+    card.addEventListener('touchstart', () => { pressTimer = setTimeout(() => openCtx(b.id), 500); }, {passive:true});
+    card.addEventListener('touchend', () => clearTimeout(pressTimer));
+    card.addEventListener('touchmove', () => clearTimeout(pressTimer));
+
+    list.appendChild(card);
+  });
+}
+
+function filterBooks(q) {
+  searchQ = q;
+  renderList();
+}
+
+// ── READER ──
+function openReader(id) {
+  const book = books.find(b => b.id === id);
+  if(!book) return;
+  activeId = id;
+  document.getElementById('reader-title').textContent = book.name.replace(/\.html?$/i,'');
+  document.getElementById('reader-sub').textContent = book.date + ' · ' + formatSize(book.content);
+  document.getElementById('reader-frame').srcdoc = book.content;
+  document.getElementById('screen-reader').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReader() {
+  document.getElementById('screen-reader').classList.add('hidden');
+  document.getElementById('reader-frame').srcdoc = '';
+  activeId = null;
+}
+
+function downloadCurrent() {
+  const book = books.find(b => b.id === activeId);
+  if(!book) return;
+  const a = document.createElement('a');
+  a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(book.content);
+  a.download = book.name;
+  a.click();
+}
+
+// ── UPLOAD SHEET ──
+function openSheet() {
+  document.getElementById('sheet').classList.add('open');
+}
+
+function closeSheet(e) {
+  if(!e || e.target === document.getElementById('sheet')) {
+    document.getElementById('sheet').classList.remove('open');
+  }
+}
+
+function addFiles(files) {
+  const tasks = Array.from(files).filter(f => /\.html?$/i.test(f.name));
+  if(!tasks.length) { alert('Выбери HTML-файл (.html или .htm)'); return; }
+  let done = 0;
+  tasks.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const existing = books.find(b => b.name === file.name);
+      if(existing) { existing.content = e.target.result; existing.date = today(); }
+      else books.unshift({ id: Math.random().toString(36).slice(2) + Date.now(), name: file.name, content: e.target.result, date: today() });
+      if(++done === tasks.length) { save(); renderList(); closeSheet(); }
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+document.getElementById('file-input').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+
+const dropArea = document.getElementById('drop-area');
+dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('drag'); });
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag'));
+dropArea.addEventListener('drop', e => { e.preventDefault(); dropArea.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+
+// ── CONTEXT MENU ──
+function openCtx(id) {
+  ctxId = id;
+  const book = books.find(b => b.id === id);
+  document.getElementById('ctx-name').textContent = book ? book.name : '';
+  document.getElementById('ctx').classList.add('open');
+}
+
+function closeCtx(e) {
+  if(!e || e.target === document.getElementById('ctx')) {
+    document.getElementById('ctx').classList.remove('open');
+    ctxId = null;
+  }
+}
+
+function ctxOpen() {
+  closeCtx();
+  if(ctxId) openReader(ctxId);
+}
+
+function ctxDownload() {
+  closeCtx();
+  const book = books.find(b => b.id === ctxId);
+  if(!book) return;
+  const a = document.createElement('a');
+  a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(book.content);
+  a.download = book.name;
+  a.click();
+}
+
+function ctxDelete() {
+  const idToDelete = ctxId;
+  if(!idToDelete) return;
+  if(!confirm('Удалить файл?')) return;
+  books = books.filter(b => b.id !== idToDelete);
+  save();
+  renderList();
+  document.getElementById('ctx').classList.remove('open');
+  ctxId = null;
+}
+
+load();
+renderList();
+</script>
+</body>
+</html>
